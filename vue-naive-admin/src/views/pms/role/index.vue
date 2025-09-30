@@ -13,6 +13,10 @@
         <i class="i-material-symbols:add mr-4 text-18" />
         新增角色
       </n-button>
+      <n-button type="primary" @click="handleTest()">
+        <i class="i-material-symbols:add mr-4 text-18" />
+        测试
+      </n-button>
     </template>
 
     <MeCrud
@@ -194,6 +198,10 @@ async function handleEnable(row) {
   } catch (error) {
     row.enableLoading = false
   }
+}
+
+const handleTest= ()=>{
+  api.test();
 }
 
 const { modalRef, modalFormRef, modalAction, modalForm, handleAdd, handleDelete, handleEdit } =

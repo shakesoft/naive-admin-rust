@@ -2,8 +2,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{mysql::MySqlQueryResult, Encode, MySql, MySqlPool, Row, Transaction};
 use std::clone::Clone;
-// 引入全局变量
-use super::DB_POOL;
+use std::ops::Deref;
+use crate::db::db_pool;
 
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct RolePermissionsPermission {
@@ -23,12 +23,13 @@ impl Default for RolePermissionsPermission {
 
 // 查询一个字段记录，返回数组值
 pub async fn fetch_permission_ids_where_role_id(mut role_id: i64) -> Result<Vec<i64>, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     // 注意：这里不能查单个字段，因为下面用了query_as 映射结构体，这样会报错； ColumnNotFound("roleId")
     // let mut sql_str = String::from("SELECT permissionId FROM role_permissions_permission ");
 
@@ -44,7 +45,7 @@ pub async fn fetch_permission_ids_where_role_id(mut role_id: i64) -> Result<Vec<
     }
     let rows: Vec<RolePermissionsPermission> = sqlx::query_as(&sql_str)
         .bind(role_id)
-        .fetch_all(&pool)
+        .fetch_all(pool)
         .await?;
     // 提取 permissionId 列的值并转换为 i64 数组
     let permission_ids: Vec<i64> = rows.iter().map(|row| row.permissionId).collect();

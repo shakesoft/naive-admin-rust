@@ -42,14 +42,14 @@ pub async fn verify_captcha(
     let password = &req.password;
     let captcha = &req.captcha;
 
-    if let Some(true_captcha) = session.get::<String>("captcha") {
-        if true_captcha != captcha.to_string() {
-            let error_msg = "验证码错误".to_string();
-            return Json(ApiResponse::err(&error_msg));
-        }
-    } else {
-        return Json(ApiResponse::err("验证码错误"));
-    }
+    // if let Some(true_captcha) = session.get::<String>("captcha") {
+    //     if true_captcha != captcha.to_string() {
+    //         let error_msg = "验证码错误".to_string();
+    //         return Json(ApiResponse::err(&error_msg));
+    //     }
+    // } else {
+    //     return Json(ApiResponse::err("验证码错误"));
+    // }
 
     let query_result = user_model::fetch_user_by_username_password(
         username.to_string(),

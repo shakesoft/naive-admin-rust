@@ -1,10 +1,11 @@
+use std::ops::Deref;
 use crate::tools;
 use crate::{
     api::resp::ApiResponse,
     api::{comm_api, role_api, user_api},
     db::{
         permission_model, profile_model, role_model, role_permissions_permission, user_model,
-        user_roles_role_model, DB_POOL,
+        user_roles_role_model,
     },
 };
 use axum::{
@@ -14,7 +15,10 @@ use axum::{
 use chrono::Utc;
 use sqlx::MySqlPool;
 use std::rc::Rc;
+use std::time::Instant;
+use tracing::info;
 use validator::Validate;
+use crate::db::db_pool;
 
 // 所有角色
 pub async fn all(
@@ -26,18 +30,28 @@ pub async fn all(
     };
 }
 
+pub async fn test(
+    Extension(curr_user): Extension<comm_api::CurrentUser>,
+) -> Json<ApiResponse<String>> {
+    let start = Instant::now();
+    let pool = db_pool();
+    let duration = start.elapsed();
+    info!("代码运行耗时: {:?}", duration);
+    Json(ApiResponse::new(200, None, &format!("{}", "成功")))
+}
+
 // 新增角色
 pub async fn add_role(Json(req): Json<role_api::RoleAddReq>) -> Json<ApiResponse<String>> {
     if let Err(error) = req.validate() {
         return Json(ApiResponse::new(400, None, &format!("{}", error)));
     }
-
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let mut tx = match pool.begin().await {
         Ok(tx) => tx,
         Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),
@@ -274,14 +288,14 @@ pub async fn patch_role(
         }
         return Json(ApiResponse::succ(Some("ok".to_string())));
     }
-
+    let pool = db_pool();
     // 编辑
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let mut tx = match pool.begin().await {
         Ok(tx) => tx,
         Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),
@@ -360,12 +374,13 @@ pub async fn add_user(
     if let Err(error) = req.validate() {
         return Json(ApiResponse::new(400, None, &format!("{}", error)));
     }
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let mut tx = match pool.begin().await {
         Ok(tx) => tx,
         Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),
@@ -403,12 +418,13 @@ pub async fn remove_user(
     if let Err(error) = req.validate() {
         return Json(ApiResponse::new(400, None, &format!("{}", error)));
     }
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let mut tx = match pool.begin().await {
         Ok(tx) => tx,
         Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),
@@ -439,12 +455,13 @@ pub async fn remove_user(
 
 // 新增角色
 pub async fn delete_role( Path(id): Path<i64>,) -> Json<ApiResponse<String>> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let mut tx = match pool.begin().await {
         Ok(tx) => tx,
         Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),

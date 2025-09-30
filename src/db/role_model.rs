@@ -3,10 +3,11 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{mysql::MySqlQueryResult, Encode, MySql, MySqlPool, Row, Transaction};
 use std::clone::Clone;
-
-// 引入全局变量
-use super::DB_POOL;
+use std::ops::Deref;
+use std::time::Instant;
 use crate::api::role_api;
+use crate::db::db_pool;
+
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Role {
     pub id: i64,
@@ -26,42 +27,51 @@ impl Default for Role {
 }
 // 查询多条记录
 pub async fn fetch_all_where_user_id(uid: i64) -> Result<Vec<Role>, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let start = Instant::now();
+    let pool = db_pool();
+    let duration = start.elapsed();
+    println!("代码运行耗时: {:?}", duration);
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let rows = sqlx::query_as::<_, Role>(
         "SELECT * FROM `role` WHERE id IN(SELECT roleId FROM user_roles_role WHERE userId=?)",
     )
     .bind(uid)
-    .fetch_all(&pool)
+    .fetch_all(pool)
     .await?;
     Ok(rows)
 }
 // 查询所有
 pub async fn fetch_all_role() -> Result<Vec<Role>, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let rows = sqlx::query_as::<_, Role>("SELECT * FROM `role`")
-        .fetch_all(&pool)
+        .fetch_all(pool)
         .await?;
     Ok(rows)
 }
 
 // 查询所有
 pub async fn fetch_all_by_req(req: Query<role_api::RolePageReq>) -> Result<Vec<Role>, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let start = Instant::now();
+    let pool = db_pool();
+    let duration = start.elapsed();
+    println!("代码运行耗时: {:?}", duration);
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     // 构建 SQL 查询语句
     let mut sql_str = "SELECT * FROM `role`".to_string();
     let mut params: Vec<String> = Vec::new();
@@ -89,7 +99,7 @@ pub async fn fetch_all_by_req(req: Query<role_api::RolePageReq>) -> Result<Vec<R
     }
     with_params = with_params.bind(limit).bind(offset);
 
-    let result = with_params.fetch_all(&pool).await?;
+    let result = with_params.fetch_all(pool).await?;
     let mut list: Vec<Role> = Vec::new();
     for row in result {
         let l = Role {
@@ -107,16 +117,17 @@ pub async fn fetch_all_by_req(req: Query<role_api::RolePageReq>) -> Result<Vec<R
 
 // 更新 enable 通过 id
 pub async fn update_enable_by_id(enable: bool, id: i64) -> Result<MySqlQueryResult, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let result = sqlx::query("update role set enable = ? where id = ?")
         .bind(&enable)
         .bind(id)
-        .execute(&pool)
+        .execute(pool)
         .await?;
     Ok(result)
     // MySqlQueryResult { rows_affected: 1, last_insert_id: 3 }
@@ -127,19 +138,20 @@ pub async fn update_role_by_struct(
     pool: &mut Transaction<'_, MySql>,
     data: Role,
 ) -> Result<bool, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let sql_str = "UPDATE role  SET code=?,name=?,enable=? where id =?  ";
     let result = sqlx::query(&sql_str)
         .bind(&data.code)
         .bind(&data.name)
         .bind(&data.enable)
         .bind(&data.id)
-        .execute(&pool)
+        .execute(pool)
         .await?;
     let rows_aff = result.rows_affected();
     Ok(rows_aff > 0)

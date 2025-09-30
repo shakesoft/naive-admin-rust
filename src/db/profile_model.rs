@@ -3,10 +3,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{mysql::MySqlQueryResult, Encode, MySql, Row, Transaction};
 use std::clone::Clone;
-// 引入全局变量
-use super::DB_POOL;
+use std::ops::Deref;
 
 use crate::api::user_api;
+use crate::db::db_pool;
 
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Profile {
@@ -34,15 +34,16 @@ impl Default for Profile {
     }
 }
 pub async fn find_info_by_user_id(user_id: i64) -> Result<Option<Profile>, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let result = sqlx::query_as::<_, Profile>("SELECT * FROM profile where userId = ? ")
         .bind(user_id)
-        .fetch_optional(&pool)
+        .fetch_optional(pool)
         .await?;
     Ok(result)
 }
@@ -51,12 +52,13 @@ pub async fn find_info_by_user_id(user_id: i64) -> Result<Option<Profile>, sqlx:
 pub async fn fetch_all_profile(
     req: Query<user_api::UserListReq>,
 ) -> Result<Vec<Profile>, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     // 构建 SQL 查询语句
     let mut sql_str = "SELECT * FROM profile".to_string();
     let mut params: Vec<String> = Vec::new();
@@ -89,7 +91,7 @@ pub async fn fetch_all_profile(
     }
     with_params = with_params.bind(limit).bind(offset);
 
-    let result = with_params.fetch_all(&pool).await?;
+    let result = with_params.fetch_all(pool).await?;
     let mut list: Vec<Profile> = Vec::new();
     for row in result {
         let l = Profile {
@@ -144,12 +146,13 @@ pub async fn delete_profile_by_user_id(
 
 // 更新用户 Profile
 pub async fn update_profile_by_struct(data: Profile) -> Result<bool, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let sql_str = "UPDATE profile  SET gender=?, address=?, email=?, nickName=? where userId =?  ";
     let result = sqlx::query(&sql_str)
         .bind(&data.gender)
@@ -157,7 +160,7 @@ pub async fn update_profile_by_struct(data: Profile) -> Result<bool, sqlx::Error
         .bind(&data.email)
         .bind(&data.nickName)
         .bind(&data.userId)
-        .execute(&pool)
+        .execute(pool)
         .await?;
     let rows_aff = result.rows_affected();
     Ok(rows_aff > 0)
@@ -167,17 +170,18 @@ pub async fn update_profile_avatar_by_user_id(
     avatar: String,
     userId: i64,
 ) -> Result<bool, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let sql_str = "UPDATE profile  SET avatar=?  where userId =?  ";
     let result = sqlx::query(&sql_str)
         .bind(avatar)
         .bind(userId)
-        .execute(&pool)
+        .execute(pool)
         .await?;
     let rows_aff = result.rows_affected();
     Ok(rows_aff > 0)

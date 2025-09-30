@@ -2,8 +2,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{mysql::MySqlQueryResult, MySql, Row, Transaction};
 use std::clone::Clone;
-// 引入全局变量
-use super::DB_POOL;
+use std::ops::Deref;
+use crate::db::db_pool;
 
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct User {
@@ -33,32 +33,34 @@ pub async fn fetch_user_by_username_password(
     username: String,
     password: String,
 ) -> Result<Option<User>, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let result =
         sqlx::query_as::<_, User>("SELECT * FROM user where username = ? and password = ? ")
             .bind(&username)
             .bind(&password)
-            .fetch_optional(&pool)
+            .fetch_optional(pool)
             .await?;
     Ok(result)
 }
 
 // 查询一条记录-通过 id
 pub async fn find_info_by_id(id: i64) -> Result<Option<User>, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let result = sqlx::query_as::<_, User>("SELECT * FROM user where id = ?")
         .bind(id)
-        .fetch_optional(&pool)
+        .fetch_optional(pool)
         .await?;
     Ok(result)
 }
@@ -68,16 +70,17 @@ pub async fn update_username_by_id(
     username: String,
     id: i64,
 ) -> Result<MySqlQueryResult, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let result = sqlx::query("update user set username = ? where id = ?")
         .bind(&username)
         .bind(id)
-        .execute(&pool)
+        .execute(pool)
         .await?;
     Ok(result)
     // MySqlQueryResult { rows_affected: 1, last_insert_id: 3 }
@@ -85,16 +88,17 @@ pub async fn update_username_by_id(
 
 // 更新 enable 通过 id
 pub async fn update_enable_by_id(enable: bool, id: i64) -> Result<MySqlQueryResult, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let result = sqlx::query("update user set enable = ? where id = ?")
         .bind(&enable)
         .bind(id)
-        .execute(&pool)
+        .execute(pool)
         .await?;
     Ok(result)
     // MySqlQueryResult { rows_affected: 1, last_insert_id: 3 }
@@ -139,16 +143,17 @@ pub async fn update_password_by_id(
     password: String,
     id: i64,
 ) -> Result<MySqlQueryResult, sqlx::Error> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let result = sqlx::query("update user set password = ? where id = ?")
         .bind(&password)
         .bind(id)
-        .execute(&pool)
+        .execute(pool)
         .await?;
     Ok(result)
     // MySqlQueryResult { rows_affected: 1, last_insert_id: 3 }

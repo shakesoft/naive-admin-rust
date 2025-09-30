@@ -1,8 +1,9 @@
+use std::ops::Deref;
 use crate::tools;
 use crate::{
     api::resp::ApiResponse,
     api::{comm_api, user_api},
-    db::{profile_model, role_model, user_model, user_roles_role_model, DB_POOL},
+    db::{profile_model, role_model, user_model, user_roles_role_model},
 };
 use axum::{
     extract::{Extension, Json, Path, Query, Request},
@@ -13,6 +14,7 @@ use sqlx::MySqlPool;
 use std::sync::Arc;
 use time::OffsetDateTime;
 use validator::Validate;
+use crate::db::db_pool;
 
 // 获取用户详情
 pub async fn detail(
@@ -145,12 +147,13 @@ pub async fn patch_user(
 
     // 更新用户角色逻辑-先删后加
     if let Some(roleIds) = req.roleIds {
-        let pool = DB_POOL
-            .lock()
-            .unwrap()
-            .as_ref()
-            .expect("DB pool not initialized")
-            .clone();
+        let pool = db_pool();
+        // let pool = DB_POOL
+        //     .lock()
+        //     .unwrap()
+        //     .as_ref()
+        //     .expect("DB pool not initialized")
+        //     .clone();
         let mut tx = match pool.begin().await {
             Ok(tx) => tx,
             Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),
@@ -203,13 +206,13 @@ pub async fn add(
     if let Err(error) = req.validate() {
         return Json(ApiResponse::new(400, None, &format!("{}", error)));
     }
-
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let mut tx = match pool.begin().await {
         Ok(tx) => tx,
         Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),
@@ -294,12 +297,13 @@ pub async fn del(
     Extension(curr_user): Extension<comm_api::CurrentUser>,
     Path(id): Path<i64>,
 ) -> Json<ApiResponse<String>> {
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    let pool = db_pool();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
     let mut tx = match pool.begin().await {
         Ok(tx) => tx,
         Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),

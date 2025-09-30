@@ -6,7 +6,7 @@ use std::clone::Clone;
 use time::OffsetDateTime;
 
 use lazy_static::lazy_static;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct User {
@@ -18,7 +18,8 @@ struct User {
 }
 
 lazy_static! {
-    static ref DB_POOL: Arc<Mutex<Option<sqlx::MySqlPool>>> = Arc::new(Mutex::new(None));
+    // static ref DB_POOL: Arc<Mutex<Option<sqlx::MySqlPool>>> = Arc::new(Mutex::new(None));
+    static ref DB_POOL: OnceLock<sqlx::MySqlPool> = OnceLock::new();
 }
 async fn init_pool() -> Result<sqlx::MySqlPool, sqlx::Error> {
     let pool = MySqlPoolOptions::new()
@@ -28,7 +29,7 @@ async fn init_pool() -> Result<sqlx::MySqlPool, sqlx::Error> {
 }
 
 async fn shutdown_pool() -> Result<(), sqlx::Error> {
-    if let Some(pool) = DB_POOL.lock().unwrap().take() {
+    if let Some(pool) = DB_POOL.get() {
         pool.close().await;
     }
     Ok(())
@@ -39,21 +40,26 @@ async fn main() {
     let pool = init_pool().await.unwrap();
 
     // 存储连接池到全局变量
-    *DB_POOL.lock().unwrap() = Some(pool);
+    // *DB_POOL.lock().unwrap() = Some(pool);
+    DB_POOL.get_or_init(move||{
+        pool
+    });
 
-    ope().await;
+
+    ope().await.unwrap();
 
     // 释放连接池
     shutdown_pool().await.unwrap();
 }
 async fn ope() -> Result<(), sqlx::Error> {
+    let pool = DB_POOL.get().unwrap();
     // 使用连接池进行数据库查询
-    let pool = DB_POOL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .expect("DB pool not initialized")
-        .clone();
+    // let pool = DB_POOL
+    //     .lock()
+    //     .unwrap()
+    //     .as_ref()
+    //     .expect("DB pool not initialized")
+    //     .clone();
 
     //     let pool = MySqlPoolOptions::new().connect("mysql://naive_admin:naive_admin_pass@localhost:33069/naive_admin").await?;
 
@@ -81,9 +87,9 @@ async fn ope() -> Result<(), sqlx::Error> {
         createTime: OffsetDateTime::now_utc(),
         updateTime: OffsetDateTime::now_utc(),
     };
-    let update_result = add_user_by_struct(&pool, user.clone()).await?;
+    let update_result = add_user_by_struct(pool, user.clone()).await?;
 
-    let users = fetch_all_users(&pool).await;
+    let users = fetch_all_users(pool).await;
     println!("{:#?}", users);
     Ok(())
 
