@@ -25,7 +25,7 @@ build:
 
 # Build Rust backend release
 build-backend:
-    cargo build --release
+    cargo build --release && copy ./.env ./target/release/.env
 
 # Build web production bundle
 build-web:
