@@ -10,6 +10,44 @@
 import { useAuthStore } from '@/store'
 
 let isConfirming = false
+
+export const AUTH_STORAGE_KEY = 'vue-naive-admin_auth'
+let cachedAccessToken
+let isTokenLoaded = false
+
+function readPersistedAccessToken() {
+  if (typeof window === 'undefined') return undefined
+
+  try {
+    const authState = window.localStorage.getItem(AUTH_STORAGE_KEY)
+    if (!authState) return undefined
+
+    const parsedState = JSON.parse(authState)
+    return parsedState?.accessToken
+  } catch (error) {
+    console.warn('[http] failed to restore access token from storage', error)
+    return undefined
+  }
+}
+
+export function getAccessToken() {
+  if (!isTokenLoaded) {
+    cachedAccessToken = readPersistedAccessToken()
+    isTokenLoaded = true
+  }
+
+  return cachedAccessToken
+}
+
+export function setAccessToken(accessToken) {
+  cachedAccessToken = accessToken
+  isTokenLoaded = true
+}
+
+export function clearAccessToken() {
+  setAccessToken(undefined)
+}
+
 export function resolveResError(code, message) {
   switch (code) {
     case 401:

@@ -7,8 +7,7 @@
  * Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
  **********************************/
 
-import { resolveResError } from './helpers'
-import { useAuthStore } from '@/store'
+import { getAccessToken, resolveResError } from './helpers'
 
 export function setupInterceptors(axiosInstance) {
   function reqResolve(config) {
@@ -17,10 +16,19 @@ export function setupInterceptors(axiosInstance) {
       return config
     }
 
-    const { accessToken } = useAuthStore()
+    const accessToken = getAccessToken()
     if (accessToken) {
       // token: Bearer + xxx
-      config.headers.Authorization = 'Bearer ' + accessToken
+      if (typeof config.headers?.set === 'function') {
+        config.headers.set('Authorization', 'Bearer ' + accessToken)
+      } else {
+        config.headers = config.headers || {}
+        config.headers.Authorization = 'Bearer ' + accessToken
+      }
+    } else if (typeof config.headers?.delete === 'function') {
+      config.headers.delete('Authorization')
+    } else if (config.headers?.Authorization) {
+      delete config.headers.Authorization
     }
 
     return config

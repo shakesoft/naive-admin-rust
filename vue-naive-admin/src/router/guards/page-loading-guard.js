@@ -12,9 +12,7 @@ export function createPageLoadingGuard(router) {
   })
 
   router.afterEach(() => {
-    setTimeout(() => {
-      $loadingBar.finish()
-    }, 200)
+    $loadingBar.finish()
   })
 
   router.onError(() => {

@@ -8,6 +8,7 @@
 
 import { defineStore } from 'pinia'
 import { useUserStore, usePermissionStore, useTabStore, useRouterStore } from '@/store'
+import { AUTH_STORAGE_KEY, clearAccessToken, setAccessToken } from '@/utils/http/helpers'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -16,8 +17,10 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     setToken({ accessToken }) {
       this.accessToken = accessToken
+      setAccessToken(accessToken)
     },
     resetToken() {
+      clearAccessToken()
       this.$reset()
     },
     toLogin() {
@@ -54,6 +57,6 @@ export const useAuthStore = defineStore('auth', {
     },
   },
   persist: {
-    key: 'vue-naivue-admin_auth',
+    key: AUTH_STORAGE_KEY,
   },
 })

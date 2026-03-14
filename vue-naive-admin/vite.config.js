@@ -7,6 +7,8 @@
  **********************************/
 
 import path from 'path'
+import http from 'http'
+import https from 'https'
 import { defineConfig, loadEnv } from 'vite'
 import Vue from '@vitejs/plugin-vue'
 import Unocss from 'unocss/vite'
@@ -15,6 +17,16 @@ import Components from 'unplugin-vue-components/vite'
 import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
 import simpleHtmlPlugin from 'vite-plugin-simple-html'
 import { pluginPagePathes, pluginIcons } from './build/plugin-isme'
+
+const httpAgent = new http.Agent({
+  keepAlive: true,
+  noDelay: true,
+})
+
+const httpsAgent = new https.Agent({
+  keepAlive: true,
+  noDelay: true,
+})
 
 export default defineConfig(({ command, mode }) => {
   const isBuild = command === 'build'
@@ -63,7 +75,14 @@ export default defineConfig(({ command, mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(new RegExp('^/api'), ''),
           secure: false,
+          // Reuse local proxy connections to avoid the dev-only alternating slow requests.
+          agent: VITE_PROXY_TARGET.startsWith('https') ? httpsAgent : httpAgent,
           configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.setHeader('Connection', 'keep-alive')
+              proxyReq.setNoDelay?.(true)
+            })
+
             // 配置此项可在响应头中看到请求的真实地址
             proxy.on('proxyRes', (proxyRes, req) => {
               proxyRes.headers['x-real-url'] = new URL(req.url || '', options.target)?.href || ''
