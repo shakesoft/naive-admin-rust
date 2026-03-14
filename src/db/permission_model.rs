@@ -102,3 +102,27 @@ pub async fn find_all_where_by_p_id(p_id: i64) -> Result<Vec<Permission>, sqlx::
     .await?;
     Ok(rows)
 }
+
+pub async fn find_all() -> Result<Vec<Permission>, sqlx::Error> {
+    let pool = db_pool();
+    let rows: Vec<Permission> =
+        sqlx::query_as::<_, Permission>("SELECT * FROM `permission` ORDER BY `order` ASC ")
+            .fetch_all(pool)
+            .await?;
+    Ok(rows)
+}
+
+pub async fn find_all_where_by_user_id(user_id: i64) -> Result<Vec<Permission>, sqlx::Error> {
+    let pool = db_pool();
+    let rows: Vec<Permission> = sqlx::query_as::<_, Permission>(
+        "SELECT DISTINCT p.* FROM `permission` p \
+         INNER JOIN role_permissions_permission rpp ON rpp.permissionId = p.id \
+         INNER JOIN user_roles_role urr ON urr.roleId = rpp.roleId \
+         WHERE urr.userId = ? \
+         ORDER BY p.`order` ASC ",
+    )
+    .bind(user_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}

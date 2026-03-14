@@ -23,8 +23,12 @@ pub async fn detail(
     let uid = curr_user.id;
     let mut rp = user_api::UserDetailRes::default();
 
-    // 通过uid获取 user信息
-    let uinfo_result = user_model::find_info_by_id(uid).await;
+    let (uinfo_result, pro_info_result, roles_result) = tokio::join!(
+        user_model::find_info_by_id(uid),
+        profile_model::find_info_by_user_id(uid),
+        role_model::fetch_all_where_user_id(uid)
+    );
+
     let uinfo = match uinfo_result {
         Ok(Some(a)) => a,
         Ok(None) => return Json(ApiResponse::err(&"用户信息不存在")),
@@ -41,8 +45,6 @@ pub async fn detail(
     rp.createTime = uinfo.createTime.to_string();
     rp.updateTime = uinfo.updateTime.to_string();
 
-    // 通过uid获取用户 Profile信息
-    let pro_info_result = profile_model::find_info_by_user_id(uid).await;
     let pro_info = match pro_info_result {
         Ok(Some(a)) => a,
         Ok(None) => return Json(ApiResponse::err(&"profile信息不存在")),
@@ -53,8 +55,6 @@ pub async fn detail(
     };
     rp.profile = pro_info;
 
-    // 通过uid获取用户 role数组
-    let roles_result = role_model::fetch_all_where_user_id(uid).await;
     let roles = match roles_result {
         Ok(rows) => {
             if !rows.is_empty() {

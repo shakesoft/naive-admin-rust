@@ -2,6 +2,7 @@ use dotenv::dotenv;
 use std::env;
 use sqlx::mysql::MySqlPoolOptions;
 use std::sync::{OnceLock};
+use std::time::Duration;
 use tracing::log::info;
 
 pub mod permission_model;
@@ -22,7 +23,12 @@ static DB_POOL: OnceLock<sqlx::MySqlPool> = OnceLock::new();
 async fn init_pool() -> Result<sqlx::MySqlPool, sqlx::Error> {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let pool = MySqlPoolOptions::new().connect(&database_url).await?;
+    let pool = MySqlPoolOptions::new()
+        .min_connections(5)
+        .max_connections(20)
+        .acquire_timeout(Duration::from_secs(5))
+        .connect(&database_url)
+        .await?;
     Ok(pool)
 }
 

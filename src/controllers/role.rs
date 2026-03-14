@@ -1,4 +1,5 @@
 use std::ops::Deref;
+use std::collections::HashMap;
 use crate::tools;
 use crate::{
     api::resp::ApiResponse,
@@ -16,11 +17,30 @@ use chrono::Utc;
 use sqlx::MySqlPool;
 use std::rc::Rc;
 use std::time::Instant;
+use aspect_macros::aspect;
 use tracing::info;
 use validator::Validate;
+use crate::aop::aspects::timer::Timer;
 use crate::db::db_pool;
 
+fn build_permission_tree(
+    parent_id: Option<i64>,
+    grouped_permissions: &mut HashMap<Option<i64>, Vec<role_api::PermissionItem>>,
+) -> Vec<Box<role_api::PermissionItem>> {
+    grouped_permissions
+        .remove(&parent_id)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|mut item| {
+            let children = build_permission_tree(Some(item.id), grouped_permissions);
+            item.children = Some(children);
+            Box::new(item)
+        })
+        .collect()
+}
+
 // 所有角色
+#[aspect(Timer)]
 pub async fn all(
     Extension(curr_user): Extension<comm_api::CurrentUser>,
 ) -> Json<ApiResponse<Vec<role_model::Role>>> {
@@ -33,10 +53,10 @@ pub async fn all(
 pub async fn test(
     Extension(curr_user): Extension<comm_api::CurrentUser>,
 ) -> Json<ApiResponse<String>> {
-    let start = Instant::now();
-    let pool = db_pool();
-    let duration = start.elapsed();
-    info!("代码运行耗时: {:?}", duration);
+    // let start = Instant::now();
+    // let pool = db_pool();
+    // let duration = start.elapsed();
+    // info!("代码运行耗时: {:?}", duration);
     Json(ApiResponse::new(200, None, &format!("{}", "成功")))
 }
 
@@ -122,108 +142,59 @@ pub async fn permissions_tree(
             return Json(ApiResponse::err(&error_msg));
         }
     };
-    let mut one_arr: Vec<permission_model::Permission> = Vec::new();
-    if is_admin {
-        let find_1_level_result = permission_model::find_1_level().await;
-        one_arr = match find_1_level_result {
-            Ok(a) => a,
-            Err(err) => {
-                let error_msg = format!("获取所有权限信息失败:{:?}", err);
-                return Json(ApiResponse::err(&error_msg));
-            }
-        };
+    let permissions_result = if is_admin {
+        permission_model::find_all().await
     } else {
-        let find_1_level_result = permission_model::find_1_level_where_by_user_id(uid).await;
-        one_arr = match find_1_level_result {
-            Ok(a) => a,
-            Err(err) => {
-                let error_msg = format!("获取用户权限信息失败:{:?}", err);
-                return Json(ApiResponse::err(&error_msg));
-            }
-        };
-    }
-    let mut rp_arr: Vec<role_api::PermissionItem> = Vec::new();
-    for one in one_arr {
-        let mut m1 = Box::new(role_api::PermissionItem {
-            id: one.id,
-            name: one.name,
-            code: one.code,
-            r#type: one.r#type,
-            parentId: one.parentId,
-            path: one.path,
-            redirect: one.redirect,
-            icon: one.icon,
-            component: one.component,
-            layout: one.layout,
-            keepAlive: one.keepAlive,
-            method: one.method,
-            description: one.description,
-            show: one.show,
-            enable: one.enable,
-            order: one.order,
-            children: Some(Vec::new()),
-        });
-        let find_2_result = permission_model::find_all_where_by_p_id(one.id).await;
-        if let Ok(two_arr) = find_2_result {
-            let mut two_children: Vec<role_api::PermissionItem> = Vec::new();
-            for two in two_arr {
-                let mut m2 = role_api::PermissionItem {
-                    id: two.id,
-                    name: two.name,
-                    code: two.code,
-                    r#type: two.r#type,
-                    parentId: two.parentId,
-                    path: two.path,
-                    redirect: two.redirect,
-                    icon: two.icon,
-                    component: two.component,
-                    layout: two.layout,
-                    keepAlive: two.keepAlive,
-                    method: two.method,
-                    description: two.description,
-                    show: two.show,
-                    enable: two.enable,
-                    order: two.order,
-                    children: Some(Vec::new()),
-                };
-                let find_3_result = permission_model::find_all_where_by_p_id(two.id).await;
-                if let Ok(three_arr) = find_3_result {
-                    let mut three_children: Vec<role_api::PermissionItem> = Vec::new();
-                    for three in three_arr {
-                        let m3 = role_api::PermissionItem {
-                            id: three.id,
-                            name: three.name,
-                            code: three.code,
-                            r#type: three.r#type,
-                            parentId: three.parentId,
-                            path: three.path,
-                            redirect: three.redirect,
-                            icon: three.icon,
-                            component: three.component,
-                            layout: three.layout,
-                            keepAlive: three.keepAlive,
-                            method: three.method,
-                            description: three.description,
-                            show: three.show,
-                            enable: three.enable,
-                            order: three.order,
-                            children: Some(Vec::new()),
-                        };
-                        three_children.push(m3)
-                    }
-                    m2.children = Some(three_children.into_iter().map(Box::new).collect());
-                }
-                two_children.push(m2)
-            }
-            // 将二级权限列表赋值给一级权限的子节点
-            m1.children = Some(two_children.into_iter().map(Box::new).collect());
+        permission_model::find_all_where_by_user_id(uid).await
+    };
+    let permissions = match permissions_result {
+        Ok(rows) => rows,
+        Err(err) => {
+            let error_msg = if is_admin {
+                format!("获取所有权限信息失败:{:?}", err)
+            } else {
+                format!("获取用户权限信息失败:{:?}", err)
+            };
+            return Json(ApiResponse::err(&error_msg));
         }
-        rp_arr.push(*m1);
+    };
+
+    let mut grouped_permissions: HashMap<Option<i64>, Vec<role_api::PermissionItem>> =
+        HashMap::new();
+    for permission in permissions {
+        grouped_permissions
+            .entry(permission.parentId)
+            .or_default()
+            .push(role_api::PermissionItem {
+                id: permission.id,
+                name: permission.name,
+                code: permission.code,
+                r#type: permission.r#type,
+                parentId: permission.parentId,
+                path: permission.path,
+                redirect: permission.redirect,
+                icon: permission.icon,
+                component: permission.component,
+                layout: permission.layout,
+                keepAlive: permission.keepAlive,
+                method: permission.method,
+                description: permission.description,
+                show: permission.show,
+                enable: permission.enable,
+                order: permission.order,
+                children: Some(Vec::new()),
+            });
     }
+
+    let rp_arr = build_permission_tree(None, &mut grouped_permissions)
+        .into_iter()
+        .map(|item| *item)
+        .collect();
     return Json(ApiResponse::succ(Some(Some(rp_arr))));
 }
 
 // 角色列表
+#[aspect(Timer)]
 pub async fn page_list(
     Extension(curr_user): Extension<comm_api::CurrentUser>,
     req: Query<role_api::RolePageReq>,

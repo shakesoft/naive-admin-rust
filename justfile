@@ -14,6 +14,9 @@ dev:
 dev-backend:
     cargo watch -x run -w src
 
+dev-run:
+    cargo run --bin main
+
 # Start web (Vite dev mode)
 dev-web:
     cd vue-naive-admin && pnpm dev

@@ -27,10 +27,7 @@ impl Default for Role {
 }
 // 查询多条记录
 pub async fn fetch_all_where_user_id(uid: i64) -> Result<Vec<Role>, sqlx::Error> {
-    let start = Instant::now();
     let pool = db_pool();
-    let duration = start.elapsed();
-    println!("代码运行耗时: {:?}", duration);
     // let pool = DB_POOL
     //     .lock()
     //     .unwrap()
@@ -62,10 +59,7 @@ pub async fn fetch_all_role() -> Result<Vec<Role>, sqlx::Error> {
 
 // 查询所有
 pub async fn fetch_all_by_req(req: Query<role_api::RolePageReq>) -> Result<Vec<Role>, sqlx::Error> {
-    let start = Instant::now();
     let pool = db_pool();
-    let duration = start.elapsed();
-    println!("代码运行耗时: {:?}", duration);
     // let pool = DB_POOL
     //     .lock()
     //     .unwrap()

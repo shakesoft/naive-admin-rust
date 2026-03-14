@@ -10,6 +10,7 @@ mod db;
 mod middleware;
 mod routers;
 mod tools;
+mod aop;
 
 #[tokio::main]
 async fn main() {
