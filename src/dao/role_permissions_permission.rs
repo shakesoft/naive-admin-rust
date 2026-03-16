@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{mysql::MySqlQueryResult, Encode, MySql, MySqlPool, Row, Transaction};
 use std::clone::Clone;
 use std::ops::Deref;
-use crate::db::db_pool;
+use crate::dao::db_pool;
 
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct RolePermissionsPermission {

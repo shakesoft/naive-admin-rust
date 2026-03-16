@@ -1,9 +1,9 @@
 use std::ops::Deref;
 use crate::tools;
 use crate::{
-    api::resp::ApiResponse,
-    api::{comm_api, user_api},
-    db::{profile_model, role_model, user_model, user_roles_role_model},
+    dto::resp::ApiResponse,
+    dto::{comm_api, user_api},
+    dao::{profile_model, role_model, user_model, user_roles_role_model},
 };
 use axum::{
     extract::{Extension, Json, Path, Query, Request},
@@ -14,7 +14,7 @@ use sqlx::MySqlPool;
 use std::sync::Arc;
 use time::OffsetDateTime;
 use validator::Validate;
-use crate::db::db_pool;
+use crate::dao::db_pool;
 
 // 获取用户详情
 pub async fn detail(

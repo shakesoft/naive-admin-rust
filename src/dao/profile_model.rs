@@ -5,8 +5,8 @@ use sqlx::{mysql::MySqlQueryResult, Encode, MySql, Row, Transaction};
 use std::clone::Clone;
 use std::ops::Deref;
 
-use crate::api::user_api;
-use crate::db::db_pool;
+use crate::dto::user_api;
+use crate::dao::db_pool;
 
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Profile {

@@ -5,8 +5,8 @@ use sqlx::{mysql::MySqlQueryResult, Encode, MySql, MySqlPool, Row, Transaction};
 use std::clone::Clone;
 use std::ops::Deref;
 use std::time::Instant;
-use crate::api::role_api;
-use crate::db::db_pool;
+use crate::dto::role_api;
+use crate::dao::db_pool;
 
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Role {

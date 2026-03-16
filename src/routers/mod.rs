@@ -11,8 +11,8 @@ use axum_session::{Session, SessionConfig, SessionLayer, SessionNullPool, Sessio
 use std::sync::{Arc, Mutex};
 
 use crate::{
-    api::login_api, controllers::hello, controllers::login, controllers::permission,
-    controllers::role, controllers::user, middleware::auth,
+    dto::login_api, handler::hello, handler::login, handler::permission,
+    handler::role, handler::user, middleware::auth,
 };
 
 pub async fn init() -> Router {

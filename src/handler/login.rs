@@ -6,7 +6,7 @@ use rand::{thread_rng, Rng};
 use svg::Document;
 use validator::Validate;
 
-use crate::{api::login_api, api::resp::ApiResponse, db::user_model, tools};
+use crate::{dto::login_api, dto::resp::ApiResponse, dao::user_model, tools};
 
 // 获取验证码
 pub async fn show_captcha(session: Session<SessionNullPool>) -> impl IntoResponse {

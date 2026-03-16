@@ -1,15 +1,11 @@
 use axum::{
-    extract::{Extension, Request},
+    extract::{Request},
     http,
     http::StatusCode,
-    middleware::{self, Next},
+    middleware::{Next},
     response::Response,
 };
-
-use axum_extra::extract::WithRejection;
-use thiserror::Error;
-
-use crate::api::comm_api;
+use crate::dto::comm_api;
 use crate::tools::jwt;
 
 pub async fn auth_jwt(req: Request, next: Next) -> Response {

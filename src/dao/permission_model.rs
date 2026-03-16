@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 // 引入全局变量
 use sqlx::FromRow;
-use crate::db::db_pool;
+use crate::dao::db_pool;
 
 #[derive(Debug, Clone, Deserialize, Serialize, FromRow)]
 pub struct Permission {

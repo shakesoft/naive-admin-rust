@@ -2,9 +2,9 @@ use std::ops::Deref;
 use std::collections::HashMap;
 use crate::tools;
 use crate::{
-    api::resp::ApiResponse,
-    api::{comm_api, role_api, user_api},
-    db::{
+    dto::resp::ApiResponse,
+    dto::{comm_api, role_api, user_api},
+    dao::{
         permission_model, profile_model, role_model, role_permissions_permission, user_model,
         user_roles_role_model,
     },
@@ -21,7 +21,7 @@ use aspect_macros::aspect;
 use tracing::info;
 use validator::Validate;
 use crate::aop::aspects::timer::Timer;
-use crate::db::db_pool;
+use crate::dao::db_pool;
 
 fn build_permission_tree(
     parent_id: Option<i64>,

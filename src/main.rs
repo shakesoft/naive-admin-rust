@@ -2,11 +2,11 @@ use tracing::log::info;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
-use crate::db::{check_db_pool_status, db_pool};
+use crate::dao::{check_db_pool_status, db_pool};
 
-mod api;
-mod controllers;
-mod db;
+mod dto;
+mod handler;
+mod dao;
 mod middleware;
 mod routers;
 mod tools;
@@ -22,7 +22,7 @@ async fn main() {
         .init();
 
     // 初始化数据库连接
-    let _ = db::mysql_connect().await;
+    let _ = dao::mysql_connect().await;
 
     // 初始化路由
     let app = routers::init().await.into_make_service();
@@ -34,7 +34,7 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 
     // 关闭数据库连接
-    let _ = db::mysql_disconnect().await;
+    let _ = dao::mysql_disconnect().await;
 
     let status = check_db_pool_status().await;
     if !status {

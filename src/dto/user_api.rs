@@ -1,4 +1,4 @@
-use crate::{db::profile_model, db::role_model};
+use crate::{dao::profile_model, dao::role_model};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 #[derive(Debug, Default, Deserialize, Serialize)]
