@@ -1,4 +1,4 @@
-use crate::db::user_model;
+use crate::dao::user_model;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 #[derive(Debug, Deserialize, Serialize)]
