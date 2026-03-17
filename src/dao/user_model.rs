@@ -40,10 +40,16 @@ pub async fn fetch_user_by_username_password(
     //     .as_ref()
     //     .expect("DB pool not initialized")
     //     .clone();
+    // let result =
+    //     sqlx::query_as::<_, User>("SELECT * FROM user where username = ? and password = ? ")
+    //         .bind(&username)
+    //         .bind(&password)
+    //         .fetch_optional(pool)
+    //         .await?;
+
     let result =
-        sqlx::query_as::<_, User>("SELECT * FROM user where username = ? and password = ? ")
+        sqlx::query_as::<_, User>("SELECT * FROM user where username = ?")
             .bind(&username)
-            .bind(&password)
             .fetch_optional(pool)
             .await?;
     Ok(result)
