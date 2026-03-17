@@ -9,16 +9,13 @@ use crate::dto::comm_api;
 use crate::tools::jwt;
 
 pub async fn auth_jwt(req: Request, next: Next) -> Response {
-    match handle_auth_jwt(req, next).await {
-        Ok(response) => response,
-        Err(status_code) => {
-            let body = format!("Error: {}", status_code);
-            Response::builder()
-                .status(status_code)
-                .body(body.into())
-                .unwrap()
-        }
-    }
+    handle_auth_jwt(req, next).await.unwrap_or_else(|status_code| {
+        let body = format!("Error: {}", status_code);
+        Response::builder()
+            .status(status_code)
+            .body(body.into())
+            .unwrap()
+    })
 }
 
 async fn handle_auth_jwt(mut req: Request, next: Next) -> Result<Response, StatusCode> {

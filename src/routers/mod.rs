@@ -4,10 +4,9 @@ use axum::{
     routing::{delete, get, patch, post},
     Router,
 };
+use axum_session::{Session, SessionConfig, SessionLayer, SessionNullPool, SessionStore};
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
-
-use axum_session::{Session, SessionConfig, SessionLayer, SessionNullPool, SessionStore};
 use std::sync::{Arc, Mutex};
 
 use crate::{
