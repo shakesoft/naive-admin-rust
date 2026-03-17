@@ -32,7 +32,6 @@ pub async fn fetch_permission_ids_where_role_id(mut role_id: i64) -> Result<Vec<
     //     .clone();
     // 注意：这里不能查单个字段，因为下面用了query_as 映射结构体，这样会报错； ColumnNotFound("roleId")
     // let mut sql_str = String::from("SELECT permissionId FROM role_permissions_permission ");
-
     let mut sql_str = String::from("SELECT * FROM role_permissions_permission ");
     // 如果不是超级管理员，则添加 WHERE 子句
     if role_id != 1 {

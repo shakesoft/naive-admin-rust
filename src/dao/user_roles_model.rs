@@ -29,7 +29,6 @@ pub async fn fetch_role_id_where_user_id(uid: i64) -> Result<Vec<i64>, sqlx::Err
     //     .as_ref()
     //     .expect("DB pool not initialized")
     //     .clone();
-
     let rows: Vec<UserRolesRole> =
         sqlx::query_as("SELECT roleId FROM user_roles_role WHERE userId = ?")
             .bind(uid)

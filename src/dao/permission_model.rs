@@ -55,7 +55,6 @@ impl Default for Permission {
 //
 pub async fn find_1_level() -> Result<Vec<Permission>, sqlx::Error> {
     let pool = db_pool();
-
     // let pool = DB_POOL
     //     .lock()
     //     .unwrap()
