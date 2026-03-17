@@ -1,9 +1,9 @@
 use std::ops::Deref;
 use crate::tools;
 use crate::{
-    dto::resp::ApiResponse,
+    dto::resp_api::ApiResponse,
     dto::{comm_api, user_api},
-    dao::{profile_model, role_model, user_model, user_roles_role_model},
+    dao::{profile_model, role_model, user_model, user_roles_model},
 };
 use axum::{
     extract::{Extension, Json, Path, Query, Request},
@@ -159,7 +159,7 @@ pub async fn patch_user(
             Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),
         };
         // 从 user_roles 表删除关系
-        match user_roles_role_model::delete_user_roles_by_user_id(&mut tx, id).await {
+        match user_roles_model::delete_user_roles_by_user_id(&mut tx, id).await {
             Ok(_) => {}
             Err(err) => {
                 if let Err(rollback_err) = tx.rollback().await {
@@ -173,11 +173,11 @@ pub async fn patch_user(
         };
         // 新增用户权限关联
         for roid in roleIds {
-            let add_data = user_roles_role_model::UserRolesRole {
+            let add_data = user_roles_model::UserRolesRole {
                 userId: id as i64,
                 roleId: roid,
             };
-            match user_roles_role_model::add_user_role_by_struct(&mut tx, add_data.clone()).await {
+            match user_roles_model::add_user_role_by_struct(&mut tx, add_data.clone()).await {
                 Ok(_) => {}
                 Err(err) => {
                     if let Err(rollback_err) = tx.rollback().await {
@@ -242,11 +242,11 @@ pub async fn add(
     if let Some(roids) = req.roleIds {
         // 新增用户权限关联
         for roid in roids {
-            let add_data = user_roles_role_model::UserRolesRole {
+            let add_data = user_roles_model::UserRolesRole {
                 userId: add_u_id as i64,
                 roleId: roid,
             };
-            match user_roles_role_model::add_user_role_by_struct(&mut tx, add_data.clone()).await {
+            match user_roles_model::add_user_role_by_struct(&mut tx, add_data.clone()).await {
                 Ok(_) => {}
                 Err(err) => {
                     if let Err(rollback_err) = tx.rollback().await {
@@ -322,7 +322,7 @@ pub async fn del(
         }
     };
     // 从 user_roles 表删除关系
-    match user_roles_role_model::delete_user_roles_by_user_id(&mut tx, id).await {
+    match user_roles_model::delete_user_roles_by_user_id(&mut tx, id).await {
         Ok(_) => {}
         Err(err) => {
             if let Err(rollback_err) = tx.rollback().await {

@@ -2,11 +2,11 @@ use std::ops::Deref;
 use std::collections::HashMap;
 use crate::tools;
 use crate::{
-    dto::resp::ApiResponse,
+    dto::resp_api::ApiResponse,
     dto::{comm_api, role_api, user_api},
     dao::{
-        permission_model, profile_model, role_model, role_permissions_permission, user_model,
-        user_roles_role_model,
+        permission_model, profile_model, role_model, role_permissions_model, user_model,
+        user_roles_model,
     },
 };
 use axum::{
@@ -97,11 +97,11 @@ pub async fn add_role(Json(req): Json<role_api::RoleAddReq>) -> Json<ApiResponse
     if let Some(pmids) = req.permissionIds {
         // 新增角色-资源权限关联
         for pmid in pmids {
-            let add_data = role_permissions_permission::RolePermissionsPermission {
+            let add_data = role_permissions_model::RolePermissionsPermission {
                 permissionId: pmid,
                 roleId: new_role_id as i64,
             };
-            match role_permissions_permission::add_role_permissions_by_struct(
+            match role_permissions_model::add_role_permissions_by_struct(
                 &mut tx,
                 add_data.clone(),
             )
@@ -134,7 +134,7 @@ pub async fn permissions_tree(
     Extension(curr_user): Extension<comm_api::CurrentUser>,
 ) -> Json<ApiResponse<Option<Vec<role_api::PermissionItem>>>> {
     let uid = curr_user.id;
-    let is_admin_result = user_roles_role_model::find_is_admin_role_by_user_id(uid).await;
+    let is_admin_result = user_roles_model::find_is_admin_role_by_user_id(uid).await;
     let is_admin = match is_admin_result {
         Ok(a) => a,
         Err(err) => {
@@ -216,7 +216,7 @@ pub async fn page_list(
         tmp.enable = ro.enable != 0;
         // 获取 permission ids
         let pmids_result =
-            role_permissions_permission::fetch_permission_ids_where_role_id(tmp.id).await;
+            role_permissions_model::fetch_permission_ids_where_role_id(tmp.id).await;
         let perm_ids = match pmids_result {
             Ok(rows) => {
                 if !rows.is_empty() {
@@ -285,7 +285,7 @@ pub async fn patch_role(
         }
     };
     // 角色-资源关系表（先删后增)
-    match role_permissions_permission::delete_permissions_by_role_id(&mut tx, id).await {
+    match role_permissions_model::delete_permissions_by_role_id(&mut tx, id).await {
         Ok(_) => {}
         Err(err) => {
             if let Err(rollback_err) = tx.rollback().await {
@@ -303,11 +303,11 @@ pub async fn patch_role(
     if let Some(pmids) = req.permissionIds {
         // 新增角色-资源权限关联
         for pmid in pmids {
-            let add_data = role_permissions_permission::RolePermissionsPermission {
+            let add_data = role_permissions_model::RolePermissionsPermission {
                 permissionId: pmid as i64,
                 roleId: id,
             };
-            match role_permissions_permission::add_role_permissions_by_struct(
+            match role_permissions_model::add_role_permissions_by_struct(
                 &mut tx,
                 add_data.clone(),
             )
@@ -357,11 +357,11 @@ pub async fn add_user(
         Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),
     };
     for uid in req.userIds {
-        let add_data = user_roles_role_model::UserRolesRole {
+        let add_data = user_roles_model::UserRolesRole {
             userId: uid,
             roleId: id,
         };
-        match user_roles_role_model::add_user_role_by_struct(&mut tx, add_data.clone()).await {
+        match user_roles_model::add_user_role_by_struct(&mut tx, add_data.clone()).await {
             Ok(_) => {}
             Err(err) => {
                 if let Err(rollback_err) = tx.rollback().await {
@@ -401,11 +401,11 @@ pub async fn remove_user(
         Err(err) => return Json(ApiResponse::err(&format!("开启事务失败:{:?}", err))),
     };
     for uid in req.userIds {
-        let add_data = user_roles_role_model::UserRolesRole {
+        let add_data = user_roles_model::UserRolesRole {
             userId: uid,
             roleId: id,
         };
-        match user_roles_role_model::delete_user_roles_by_user_role_id(&mut tx, uid, id).await {
+        match user_roles_model::delete_user_roles_by_user_role_id(&mut tx, uid, id).await {
             Ok(_) => {}
             Err(err) => {
                 if let Err(rollback_err) = tx.rollback().await {
@@ -454,7 +454,7 @@ pub async fn delete_role( Path(id): Path<i64>,) -> Json<ApiResponse<String>> {
         }
     };
     // 删除角色-资源关系表
-    match role_permissions_permission::delete_permissions_by_role_id(&mut tx, id).await {
+    match role_permissions_model::delete_permissions_by_role_id(&mut tx, id).await {
         Ok(_) => {}
         Err(err) => {
             if let Err(rollback_err) = tx.rollback().await {

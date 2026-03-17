@@ -8,9 +8,9 @@ use tracing::log::info;
 pub mod permission_model;
 pub mod profile_model;
 pub mod role_model;
-pub mod role_permissions_permission;
+pub mod role_permissions_model;
 pub mod user_model;
-pub mod user_roles_role_model;
+pub mod user_roles_model;
 
 // 定义懒加载全局变量，“懒加载里套懒加载”显得多余了
 // lazy_static! {
